@@ -1,3 +1,7 @@
+import { recordCalculation } from './scripts/history.js';
+import { formatBRL, parseLocaleNumber, parseLocaleNumberOrZero, toInt } from './scripts/utils/number.js';
+import { validateInputs } from './scripts/validation.js';
+
 const form = document.getElementById('fee-form');
 const calculateBtn = document.getElementById('calculateBtn');
 const resetBtn = document.getElementById('resetBtn');
@@ -18,32 +22,13 @@ const installmentValueOut = document.getElementById('installmentValue');
 
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
-function toNumber(input) { return Number.parseFloat(input.value); }
-function toInt(input) { return Number.parseInt(input.value, 10); }
-const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-function fmt(n) { return brl.format(Number.isFinite(n) ? n : 0); }
-function toNumberLocale(input) {
-  const raw = typeof input.value === 'string' ? input.value.trim() : '';
-  return Number.parseFloat(raw.replace(',', '.'));
-}
-function toNumberLocaleOrZero(input) {
-  const raw = typeof input.value === 'string' ? input.value.trim() : '';
-  if (raw === '') return 0;
-  const n = Number.parseFloat(raw.replace(',', '.'));
-  return Number.isFinite(n) ? n : 0;
-}
 
 function clearErrors() {
   [totalErr, upfrontErr, installmentsErr, feeErr].forEach(hide);
-}
-
-function validateInputs(total, upfront, installments, fee) {
-  let ok = true;
-  if (!(Number.isFinite(total) && total >= 0)) { show(totalErr); ok = false; }
-  if (!(Number.isFinite(upfront) && upfront >= 0 && upfront <= total)) { show(upfrontErr); ok = false; }
-  if (!(Number.isInteger(installments) && installments >= 1)) { show(installmentsErr); ok = false; }
-  if (!(Number.isFinite(fee) && fee >= 0 && fee < 100)) { show(feeErr); ok = false; }
-  return ok;
+  totalValueEl.removeAttribute('aria-invalid');
+  upfrontEl.removeAttribute('aria-invalid');
+  installmentsEl.removeAttribute('aria-invalid');
+  feeEl.removeAttribute('aria-invalid');
 }
 
 form.addEventListener('submit', (e) => {
@@ -51,12 +36,17 @@ form.addEventListener('submit', (e) => {
   clearErrors();
   calculateBtn.disabled = true;
 
-  const total = toNumber(totalValueEl);
-  const upfront = toNumberLocaleOrZero(upfrontEl);
-  const installments = toInt(installmentsEl);
-  const fee = toNumberLocale(feeEl);
+  const total = parseLocaleNumber(totalValueEl.value);
+  const upfront = parseLocaleNumberOrZero(upfrontEl.value);
+  const installments = toInt(installmentsEl.value);
+  const fee = parseLocaleNumber(feeEl.value);
 
-  if (!validateInputs(total, upfront, installments, fee)) {
+  const { ok, errors } = validateInputs({ total, upfront, installments, fee });
+  if (!ok) {
+    if (errors.total) { show(totalErr); totalValueEl.setAttribute('aria-invalid', 'true'); }
+    if (errors.upfront) { show(upfrontErr); upfrontEl.setAttribute('aria-invalid', 'true'); }
+    if (errors.installments) { show(installmentsErr); installmentsEl.setAttribute('aria-invalid', 'true'); }
+    if (errors.fee) { show(feeErr); feeEl.setAttribute('aria-invalid', 'true'); }
     calculateBtn.disabled = false;
     return;
   }
@@ -66,19 +56,32 @@ form.addEventListener('submit', (e) => {
   const finalTotal = upfront + totalPlusFee;
   const installmentValue = totalPlusFee / installments;
 
-  finalTotalOut.textContent = fmt(finalTotal);
-  installmentValueOut.textContent = fmt(installmentValue);
+  finalTotalOut.textContent = formatBRL(finalTotal);
+  installmentValueOut.textContent = formatBRL(installmentValue);
   show(results);
 
   calculateBtn.disabled = false;
+
+  // save to history (raw input values for easy repopulation)
+  const inputs = {
+    totalValue: totalValueEl.value,
+    upfrontPayment: upfrontEl.value,
+    installments: installmentsEl.value,
+    feePercent: feeEl.value
+  };
+  try {
+    recordCalculation(inputs, finalTotal);
+  } catch {
+    // ignore history errors to avoid breaking the calculator UI
+  }
 });
 
 resetBtn.addEventListener('click', () => {
   form.reset();
   clearErrors();
   hide(results);
-  finalTotalOut.textContent = brl.format(0);
-  installmentValueOut.textContent = brl.format(0);
+  finalTotalOut.textContent = formatBRL(0);
+  installmentValueOut.textContent = formatBRL(0);
 });
 
 

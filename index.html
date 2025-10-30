@@ -20,39 +20,46 @@
         <div>
           <label for="totalValue" class="block text-sm font-medium text-slate-700">Valor total</label>
           <input id="totalValue" name="totalValue" type="number" inputmode="decimal" step="0.01" min="0" required
+            aria-describedby="totalValueError"
             class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
             placeholder="ex.: 1000.00">
-          <p id="totalValueError" class="mt-1 text-xs text-red-600 hidden">Informe um número válido e não negativo.</p>
+          <p id="totalValueError" role="alert" class="mt-1 text-xs text-red-600 hidden">Informe um número válido e não
+            negativo.</p>
         </div>
 
         <div>
           <label for="upfrontPayment" class="block text-sm font-medium text-slate-700">Entrada (opcional)</label>
           <input id="upfrontPayment" name="upfrontPayment" type="text" inputmode="decimal"
+            aria-describedby="upfrontPaymentError"
             class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
             placeholder="ex.: 200.00">
-          <p id="upfrontPaymentError" class="mt-1 text-xs text-red-600 hidden">Entrada deve ser ≤ total e não negativa.
+          <p id="upfrontPaymentError" role="alert" class="mt-1 text-xs text-red-600 hidden">Entrada deve ser ≤ total e
+            não negativa.
           </p>
         </div>
 
         <div>
           <label for="installments" class="block text-sm font-medium text-slate-700">Parcelas</label>
           <input id="installments" name="installments" type="number" inputmode="numeric" step="1" min="1" required
+            aria-describedby="installmentsError"
             class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
             placeholder="ex.: 6">
-          <p id="installmentsError" class="mt-1 text-xs text-red-600 hidden">Número de parcelas deve ser um inteiro ≥ 1.
+          <p id="installmentsError" role="alert" class="mt-1 text-xs text-red-600 hidden">Número de parcelas deve ser um
+            inteiro ≥ 1.
           </p>
         </div>
 
         <div>
           <label for="feePercent" class="block text-sm font-medium text-slate-700">Taxa de retenção (%)</label>
           <input id="feePercent" name="feePercent" type="text" inputmode="decimal" pattern="[0-9]+([\.,][0-9]{1,6})?"
-            title="Use números com ponto ou vírgula" required=""
+            title="Use números com ponto ou vírgula" required="" aria-describedby="feePercentError"
             class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
             placeholder="ex.: 15,10">
           <p class="mt-1 text-xs text-slate-500">É a taxa cobrada pela maquininha.<br /> Exemplo: se a taxa é 10% e você
             passa
             R$ 1.000,00, você recebe 1.000 - 10%.</p>
-          <p id="feePercentError" class="mt-1 text-xs text-red-600 hidden">Taxa deve ser ≥ 0 e menor que 100.</p>
+          <p id="feePercentError" role="alert" class="mt-1 text-xs text-red-600 hidden">Taxa deve ser ≥ 0 e menor que
+            100.</p>
         </div>
 
         <div class="pt-2 flex gap-2">
@@ -63,7 +70,7 @@
         </div>
       </form>
 
-      <div id="results" class="mt-6 hidden">
+      <div id="results" class="mt-6 hidden" aria-live="polite">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="rounded-lg border border-slate-200 p-3">
             <div class="text-xs text-slate-500">Total final</div>
@@ -77,7 +84,19 @@
       </div>
     </section>
 
-    <script src="./script.js"></script>
+    <section id="history" aria-label="Calculation history"
+      class="mt-6 bg-slate-100 shadow-sm ring-1 ring-slate-200 rounded-xl p-4 sm:p-6">
+      <div class="history-header flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold">Histórico</h2>
+        <button id="history-clear" type="button"
+          class="rounded-lg bg-slate-100 px-3 py-1.5 text-slate-700 hover:bg-slate-200">Limpar tudo</button>
+      </div>
+      <ul id="history-list" class="space-y-2"></ul>
+    </section>
+
+    <script type="module" src="./scripts/db.js"></script>
+    <script type="module" src="./scripts/history.js"></script>
+    <script type="module" src="./script.js"></script>
   </main>
 </body>
 
