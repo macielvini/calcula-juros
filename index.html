@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de Taxa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-200 text-slate-900">
+  <main class="mx-auto max-w-xl p-4 sm:p-6">
+    <header class="py-6 text-center">
+      <h1 class="text-2xl sm:text-3xl font-semibold">Calculadora de Taxa</h1>
+      <p class="text-sm text-slate-500 mt-1">Calcule total com taxa e valor das parcelas</p>
+    </header>
+
+    <section class="bg-slate-100 shadow-sm ring-1 ring-slate-200 rounded-xl p-4 sm:p-6">
+      <form id="fee-form" class="space-y-4">
+        <div>
+          <label for="totalValue" class="block text-sm font-medium text-slate-700">Valor total</label>
+          <input id="totalValue" name="totalValue" type="number" inputmode="decimal" step="0.01" min="0" required
+            class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
+            placeholder="ex.: 1000.00">
+          <p id="totalValueError" class="mt-1 text-xs text-red-600 hidden">Informe um número válido e não negativo.</p>
+        </div>
+
+        <div>
+          <label for="upfrontPayment" class="block text-sm font-medium text-slate-700">Entrada (opcional)</label>
+          <input id="upfrontPayment" name="upfrontPayment" type="text" inputmode="decimal"
+            class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
+            placeholder="ex.: 200.00">
+          <p id="upfrontPaymentError" class="mt-1 text-xs text-red-600 hidden">Entrada deve ser ≤ total e não negativa.
+          </p>
+        </div>
+
+        <div>
+          <label for="installments" class="block text-sm font-medium text-slate-700">Parcelas</label>
+          <input id="installments" name="installments" type="number" inputmode="numeric" step="1" min="1" required
+            class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
+            placeholder="ex.: 6">
+          <p id="installmentsError" class="mt-1 text-xs text-red-600 hidden">Número de parcelas deve ser um inteiro ≥ 1.
+          </p>
+        </div>
+
+        <div>
+          <label for="feePercent" class="block text-sm font-medium text-slate-700">Taxa de retenção (%)</label>
+          <input id="feePercent" name="feePercent" type="text" inputmode="decimal" pattern="[0-9]+([\.,][0-9]{1,6})?"
+            title="Use números com ponto ou vírgula" required=""
+            class="mt-1 w-full rounded-lg border-slate-300 bg-white px-3 py-2 focus:border-slate-400 focus:ring-slate-400"
+            placeholder="ex.: 15,10">
+          <p class="mt-1 text-xs text-slate-500">É a taxa cobrada pela maquininha.<br /> Exemplo: se a taxa é 10% e você
+            passa
+            R$ 1.000,00, você recebe 1.000 - 10%.</p>
+          <p id="feePercentError" class="mt-1 text-xs text-red-600 hidden">Taxa deve ser ≥ 0 e menor que 100.</p>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button id="calculateBtn" type="submit"
+            class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-50">Calcular</button>
+          <button id="resetBtn" type="button"
+            class="inline-flex items-center justify-center rounded-lg bg-slate-100 px-4 py-2 text-slate-700 hover:bg-slate-200">Limpar</button>
+        </div>
+      </form>
+
+      <div id="results" class="mt-6 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="rounded-lg border border-slate-200 p-3">
+            <div class="text-xs text-slate-500">Total final</div>
+            <div id="finalTotal" class="text-xl font-semibold">R$ 0,00</div>
+          </div>
+          <div class="rounded-lg border border-slate-200 p-3">
+            <div class="text-xs text-slate-500">Valor da parcela</div>
+            <div id="installmentValue" class="text-xl font-semibold">R$ 0,00</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="./script.js"></script>
+  </main>
+</body>
+
+</html>
