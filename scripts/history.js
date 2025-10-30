@@ -4,93 +4,154 @@ import {
   deleteById,
   clearAll,
 } from "./db.js";
-import {
-  formatBRL,
-  parseLocaleNumberOrZero,
-  parseAndFormatBrl,
-} from "./utils/number.js";
+import { parseAndFormatBrl } from "./utils/number.js";
+import { calculatorIcon, trashIcon } from "./utils/icons.js";
 
 const listEl = document.getElementById("history-list");
 const clearBtn = document.getElementById("history-clear");
 
 export async function renderHistory() {
-  const items = await getAllCalculationsDesc();
+  let items = [];
+  try {
+    items = (await getAllCalculationsDesc()) || [];
+  } catch {
+    items = [];
+  }
+
   if (!listEl) return;
-  listEl.innerHTML = items
-    .map((item) => {
-      const { inputs, result } = item;
-      const initialValue = parseAndFormatBrl(inputs.totalValue);
-      const upfrontValue = parseAndFormatBrl(inputs.upfrontPayment);
-      const numberOfInstallments = `${inputs.installments}x`;
-      const installmentValue = parseAndFormatBrl(
-        (Number(result) || 1) / (Number(inputs.installments) || 1)
+  listEl.textContent = "";
+
+  if (items.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "text-sm text-slate-500 px-3 py-2";
+    empty.textContent = "Sem histórico ainda.";
+    listEl.appendChild(empty);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  for (const item of items) {
+    const { inputs = {}, result } = item;
+    const totalValue = Number(inputs.totalValue) || 0;
+    const upfrontPayment = Number(inputs.upfrontPayment) || 0;
+    const installments = Number(inputs.installments) || 0;
+    const totalFinanced = Number(result) || 0;
+
+    const initialValue = parseAndFormatBrl(totalValue);
+    const upfrontValue = parseAndFormatBrl(upfrontPayment);
+    const installmentUnit =
+      installments > 0 ? parseAndFormatBrl(totalFinanced / installments) : "—";
+
+    const feePercent =
+      typeof inputs.feePercent === "string" && inputs.feePercent.length > 0
+        ? `${inputs.feePercent.replace(".", ",")}%`
+        : "";
+
+    const totalWithUpfront = parseAndFormatBrl(totalFinanced + upfrontPayment);
+
+    const li = document.createElement("li");
+    li.dataset.id = item.id;
+    li.classList.add(
+      "relative",
+      "flex",
+      "gap-3",
+      "rounded-lg",
+      "border",
+      "border-slate-200",
+      "bg-white",
+      "px-3",
+      "py-2",
+      "sm:flex-row",
+      "sm:items-start",
+      "sm:justify-between"
+    );
+
+    const content = document.createElement("div");
+    content.className = "flex flex-col gap-1 text-sm text-slate-700 sm:flex-1";
+
+    const createLabeledRow = (label, value) => {
+      if (!value) return null;
+      const row = document.createElement("div");
+      const strong = document.createElement("span");
+      strong.className = "font-medium";
+      strong.textContent = `${label}: `;
+      row.appendChild(strong);
+      row.append(
+        value instanceof Node ? value : document.createTextNode(value)
       );
-      const fee = `${inputs.feePercent.replace(".", ",")}%`;
-      const buttons = `
-					<div class="absolute top-2 right-2 flex items-start sm:items-center gap-1 shrink-0">
-						<button class="use text-slate-700 hover:text-slate-900 underline p-2 hover:bg-slate-100 rounded-lg" type="button">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calculator-icon lucide-calculator"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-						</button>
-						<button class="delete text-red-600 hover:text-red-700 p-2 hover:bg-red-100 rounded-lg" type="button">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-						</button>
-					</div>
-			`;
+      return row;
+    };
 
-      return `
-						<li data-id="${
-              item.id
-            }" class="relative flex gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-start sm:justify-between">
-							<div class="flex flex-col gap-1 text-sm text-slate-700 sm:flex-1">
-								${
-                  initialValue
-                    ? `<div><span class="font-medium">Valor inicial:</span> ${initialValue}</div>`
-                    : ""
-                }
-								<div><span class="font-medium">Entrada:</span> ${upfrontValue}</div>
-								${
-                  numberOfInstallments
-                    ? `
-								<div>
-									${
-                    numberOfInstallments
-                      ? `<div><span class="font-medium">Parcelas:</span> ${numberOfInstallments} ${installmentValue}</div>`
-                      : ""
-                  }
-								</div>`
-                    : ""
-                }
-									${fee ? `<div><span class="font-medium">Taxa:</span> ${fee}</div>` : ""}
-								${
-                  result
-                    ? `<div><span class="font-medium">Total:</span> ${parseAndFormatBrl(
-                        Number(result) + Number(inputs.upfrontPayment)
-                      )}
-                      </div>`
-                    : ""
-                }
-							</div>
-							${buttons}
-						</li>`;
-    })
-    .join("");
-}
+    const parcelas = document.createElement("div");
+    const strongParcelas = document.createElement("span");
+    strongParcelas.className = "font-medium";
+    strongParcelas.textContent = "Parcelas: ";
+    parcelas.appendChild(strongParcelas);
+    parcelas.append(
+      document.createTextNode(
+        installments > 0 ? `${installments}x ${installmentUnit}` : "—"
+      )
+    );
 
-if (listEl) {
-  listEl.addEventListener("click", async (e) => {
-    const target = e.target;
-    const li = target && target.closest ? target.closest("li[data-id]") : null;
-    if (!li) return;
-    const id = Number(li.dataset.id);
-    if (target.classList.contains("use")) {
-      const items = await getAllCalculationsDesc();
-      const found = items.find((x) => x.id === id);
-      if (found) populateCalculator(found.inputs);
-    } else if (target.classList.contains("delete")) {
-      await deleteById(id);
+    const rows = [
+      createLabeledRow("Valor inicial", initialValue),
+      createLabeledRow("Entrada", upfrontValue),
+      parcelas,
+      createLabeledRow("Taxa", feePercent),
+      createLabeledRow("Total", totalWithUpfront),
+    ].filter(Boolean);
+
+    rows.forEach((r) => content.appendChild(r));
+
+    const buttons = document.createElement("div");
+    buttons.classList.add(
+      "absolute",
+      "top-2",
+      "right-2",
+      "flex",
+      "items-start",
+      "sm:items-center",
+      "gap-1",
+      "shrink-0"
+    );
+
+    const useButton = document.createElement("button");
+    useButton.type = "button";
+    useButton.classList.add(
+      "text-slate-700",
+      "hover:text-slate-900",
+      "underline",
+      "p-2",
+      "hover:bg-slate-100",
+      "rounded-lg"
+    );
+    useButton.innerHTML = calculatorIcon;
+    useButton.addEventListener("click", () => {
+      populateCalculator(item.inputs);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.classList.add(
+      "text-red-600",
+      "hover:text-red-700",
+      "p-2",
+      "hover:bg-red-100",
+      "rounded-lg"
+    );
+    deleteButton.innerHTML = trashIcon;
+    deleteButton.addEventListener("click", async () => {
+      await deleteById(item.id);
       await renderHistory();
-    }
-  });
+    });
+
+    buttons.append(useButton, deleteButton);
+    li.append(content, buttons);
+    frag.appendChild(li);
+  }
+
+  listEl.appendChild(frag);
 }
 
 if (clearBtn) {
