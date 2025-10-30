@@ -22,4 +22,6 @@ export function toInt(value) {
   return Number.parseInt(raw, 10);
 }
 
-
+export function parseAndFormatBrl(value) {
+  return formatBRL(parseLocaleNumberOrZero(value));
+}
